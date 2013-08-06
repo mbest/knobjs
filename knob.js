@@ -1,16 +1,23 @@
-(function(factory) {
-    if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
-        // [1] CommonJS/Node.js
-        factory(require('knockout'));
+(function (factory) {
+    if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like enviroments that support module.exports,
+        // like Node.
+        module.exports = factory(require('knockout'));
     } else if (typeof define === 'function' && define.amd) {
-        // [2] AMD anonymous module
+        // AMD. Register as an anonymous module.
         define(['knockout'], factory);
     } else {
-        // [3] No module loader (plain <script> tag) - ko is directly in global namespace
-        window.knob = factory(ko);
+        // Browser globals
+        knob = factory(ko);
     }
-}
-(function(ko, undefined) {
+}(function(ko, undefined) {
+    var objCreate = Object.create || function(o) {
+        function F(){};
+        F.prototype = o;
+        return new F();
+    };
+    
     // Map of all defined classes
     var map = {};
 
@@ -19,7 +26,7 @@
         map[prop] = undefined;
     }
 
-    function knob(classPath, superPathOrClass, protoObject) {
+    var knob = function(classPath, superPathOrClass, protoObject) {
         if (typeof classPath !== 'string') {
             throw Error('invalid class-path: ' + classPath);
         }
@@ -61,14 +68,13 @@
         // Create the constructor function dynamically so it has the appropriate name.
         func = map[classPath] = (new Function("constructor", "return function " + classPath.replace(/[^\w$]/g, '_') + "(){ constructor.apply(this, arguments); };")) (
             function () {
-                // Initialize the object unless we're creating this object as a prototype (extending)
-                if (!func.__knob_ext && func.prototype.initialize) {
-                    // Activate any properties that need it
-                    for (var prop in this) {
-                        if (this[prop] && this[prop].__knob_activate) {
-                            this[prop] = this[prop].__knob_activate(this);
-                        }
+                // Instatiate any properties that need it
+                for (var prop in this) {
+                    if (this[prop] && this[prop].__knob_instantiate) {
+                        this[prop] = this[prop].__knob_instantiate(this);
                     }
+                }
+                if (func.prototype.initialize) {
                     // Call the initialize method from the prototype
                     func.prototype.initialize.apply(this, arguments);
                 }
@@ -82,10 +88,7 @@
 
         // Extend from the super-class
         if (superClass) {
-            superClass.__knob_ext = true;
-            prototype = func.prototype = new superClass();
-            superClass.__knob_ext = undefined;
-
+            prototype = func.prototype = objCreate(superClass.prototype);
             prototype.constructor = func;
 
             // Save shortcuts to super-class constructor and prototype
@@ -111,15 +114,15 @@
     }
 
     function knobExtend(extenders) {
-        var origActivate = this.__knob_activate;
-        this.__knob_activate = function(binding) {
-            return origActivate.call(this, binding).extend(extenders);
+        var origInstantiate = this.__knob_instantiate;
+        this.__knob_instantiate = function(binding) {
+            return origInstantiate.call(this, binding).extend(extenders);
         }
         return this;
     };
 
     knob.computed = function(readFunction, writeFunction) {
-        readFunction.__knob_activate = function(binding) {
+        readFunction.__knob_instantiate = function(binding) {
             return ko.computed(readFunction, binding, {deferEvaluation:true, write:writeFunction});
         };
         readFunction.extend = knobExtend;
@@ -128,7 +131,7 @@
 
     knob.observable = function(initialValue) {
         return {
-            __knob_activate: function() {
+            __knob_instantiate: function() {
                 return ko.observable(initialValue);
             },
             extend: knobExtend,
@@ -138,7 +141,7 @@
 
     knob.observableArray = function() {
         return {
-            __knob_activate: function() {
+            __knob_instantiate: function() {
                 return ko.observableArray();
             },
             extend: knobExtend
@@ -146,7 +149,7 @@
     };
 
     knob.bound = function(func) {
-        func.__knob_activate = function(binding) {
+        func.__knob_instantiate = function(binding) {
             return func.bind(binding);
         };
         return func;
