@@ -1,0 +1,156 @@
+(function(factory) {
+    if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
+        // [1] CommonJS/Node.js
+        factory(require('knockout'));
+    } else if (typeof define === 'function' && define.amd) {
+        // [2] AMD anonymous module
+        define(['knockout'], factory);
+    } else {
+        // [3] No module loader (plain <script> tag) - ko is directly in global namespace
+        window.knob = factory(ko);
+    }
+}
+(function(ko, undefined) {
+    // Map of all defined classes
+    var map = {};
+
+    // Make sure there's nothing defined in map
+    for (var prop in map) {
+        map[prop] = undefined;
+    }
+
+    function knob(classPath, superPathOrClass, protoObject) {
+        if (typeof classPath !== 'string') {
+            throw Error('invalid class-path: ' + classPath);
+        }
+
+        var func = map[classPath];
+
+        // Retrieve
+        if (arguments.length === 1) {
+            if (func) {
+                return func;
+            } else {
+                throw Error('non-existent class: ' + classPath);
+            }
+        }
+
+        if (arguments.length === 2) {
+            // No super-class (second argument is proto-object)
+            protoObject = superPathOrClass;
+
+            // Null proto given: delete class from map and return
+            if (protoObject === null) {
+                map[classPath] = undefined;
+                return func;
+            }
+        } else {
+            // Look up super-class path if a string is given
+            var superClass = typeof superPathOrClass === 'string' ? map[superPathOrClass] : superPathOrClass;
+
+            if (typeof superClass !== 'function') {
+                throw Error('invalid super-class: ' + superPathOrClass);
+            }
+        }
+
+        // Proto-object must be an object
+        if (!protoObject || typeof protoObject !== 'object') {
+            throw Error('invalid proto-object given for: ' + classPath);
+        }
+
+        // Create the constructor function dynamically so it has the appropriate name.
+        func = map[classPath] = (new Function("constructor", "return function " + classPath.replace(/[^\w$]/g, '_') + "(){ constructor.apply(this, arguments); };")) (
+            function () {
+                // Initialize the object unless we're creating this object as a prototype (extending)
+                if (!func.__knob_ext && func.prototype.initialize) {
+                    // Activate any properties that need it
+                    for (var prop in this) {
+                        if (this[prop] && this[prop].__knob_activate) {
+                            this[prop] = this[prop].__knob_activate(this);
+                        }
+                    }
+                    // Call the initialize method from the prototype
+                    func.prototype.initialize.apply(this, arguments);
+                }
+            }
+        );
+
+        // Save the class-path for reference
+        func.$classpath = classPath;
+
+        var prototype = func.prototype;
+
+        // Extend from the super-class
+        if (superClass) {
+            superClass.__knob_ext = true;
+            prototype = func.prototype = new superClass();
+            superClass.__knob_ext = undefined;
+
+            prototype.constructor = func;
+
+            // Save shortcuts to super-class constructor and prototype
+            func.$superclass = superClass;
+            func.$super = superClass.prototype;
+        }
+
+        // Copy the methods from the proto-object to the prototype
+        ko.utils.extend(prototype, protoObject);
+
+        // Set up the class at the specified name relative to 'this'
+        if (this) {
+            var hook = this, parts = classPath.split('.'), part;
+            for (var i = 0, n = parts.length - 1; part = parts[i], i < n; i++) {
+                if (!hook[part]) {
+                    hook[part] = {};
+                }
+            }
+            hook[part] = func;
+        }
+
+        return func;
+    }
+
+    function knobExtend(extenders) {
+        var origActivate = this.__knob_activate;
+        this.__knob_activate = function(binding) {
+            return origActivate.call(this, binding).extend(extenders);
+        }
+        return this;
+    };
+
+    knob.computed = function(readFunction, writeFunction) {
+        readFunction.__knob_activate = function(binding) {
+            return ko.computed(readFunction, binding, {deferEvaluation:true, write:writeFunction});
+        };
+        readFunction.extend = knobExtend;
+        return readFunction;
+    };
+
+    knob.observable = function(initialValue) {
+        return {
+            __knob_activate: function() {
+                return ko.observable(initialValue);
+            },
+            extend: knobExtend,
+            v: initialValue
+        };
+    };
+
+    knob.observableArray = function() {
+        return {
+            __knob_activate: function() {
+                return ko.observableArray();
+            },
+            extend: knobExtend
+        };
+    };
+
+    knob.bound = function(func) {
+        func.__knob_activate = function(binding) {
+            return func.bind(binding);
+        };
+        return func;
+    };
+
+    return knob;
+}));
