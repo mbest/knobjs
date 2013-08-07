@@ -17,7 +17,7 @@
         F.prototype = o;
         return new F();
     };
-    
+
     // Map of all defined classes
     var map = {};
 
@@ -98,17 +98,6 @@
 
         // Copy the methods from the proto-object to the prototype
         ko.utils.extend(prototype, protoObject);
-
-        // Set up the class at the specified name relative to 'this'
-        if (this) {
-            var hook = this, parts = classPath.split('.'), part;
-            for (var i = 0, n = parts.length - 1; part = parts[i], i < n; i++) {
-                if (!hook[part]) {
-                    hook[part] = {};
-                }
-            }
-            hook[part] = func;
-        }
 
         return func;
     }

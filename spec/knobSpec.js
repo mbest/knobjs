@@ -38,8 +38,6 @@ describe("Knob", function() {
 
     it('should return a constructor function', function() {
         expect(typeof knob(classpath, {})).toEqual("function");
-        // Should also make the constructor available at the specified path
-        expect(typeof window[classpath]).toEqual("function");
     });
 
     it('should remove class if second parameter is null', function() {
@@ -64,7 +62,6 @@ describe("Knob", function() {
     it('should return the registered constructor when called again with the same path', function() {
         var constructor = knob(classpath, {});
         expect(knob(classpath)).toEqual(constructor);
-        
     });
 
     it('should overwrite previous class when called twice', function() {
@@ -85,12 +82,12 @@ describe("Knob", function() {
         myObj.myFunc();
         expect(myObj.myProp).toEqual(42);
     });
-    
+
     it('should set prototype chain from given superclass', function() {
         var SuperClass = knob(superclasspath, {});
         var SubClass = knob(subclasspath, SuperClass, {});
         expect((new SubClass()) instanceof SuperClass).toBeTruthy();
-        
+
         var sub2class = knob(sub2classpath, SubClass, {});
         expect((new sub2class()) instanceof SuperClass).toBeTruthy();
     });
@@ -99,11 +96,11 @@ describe("Knob", function() {
         var SuperClass = knob(superclasspath, {});
         var SubClass = knob(subclasspath, superclasspath, {});
         expect((new SubClass()) instanceof SuperClass).toBeTruthy();
-        
+
         var sub2class = knob(sub2classpath, subclasspath, {});
         expect((new sub2class()) instanceof SuperClass).toBeTruthy();
     });
-    
+
     it('should set prototype from superclass and proto-object', function() {
         var SuperClass = knob(superclasspath, {
             myProp: 41
@@ -139,7 +136,7 @@ describe("Knob", function() {
                 proof += "3";
             }
         });
-        
+
         new Sub2class();
         expect(proof).toEqual("123");
     });
@@ -163,11 +160,11 @@ describe("Knob", function() {
                 proof += arg;
             }
         });
-        
+
         new Sub2class("3");
         expect(proof).toEqual("123");
     });
-    
+
     it('should skip missing superclass initilize method', function() {
         var proof = "";
         var SuperClass = knob(superclasspath, {
@@ -182,7 +179,7 @@ describe("Knob", function() {
                 proof += "2";
             }
         });
-        
+
         new Sub2class();
         expect(proof).toEqual("12");
     });
@@ -201,7 +198,7 @@ describe("Knob", function() {
             }
         });
         var Sub2class = knob(sub2classpath, SubClass, {});
-        
+
         new Sub2class();
         expect(proof).toEqual("12");
     });
