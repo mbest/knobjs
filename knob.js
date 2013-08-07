@@ -31,10 +31,10 @@
             throw Error('invalid class-path: ' + classPath);
         }
 
-        var func = map[classPath];
+        var func = map[classPath], arglen = arguments.length;
 
         // Retrieve
-        if (arguments.length === 1) {
+        if (arglen === 1) {
             if (func) {
                 return func;
             } else {
@@ -42,7 +42,7 @@
             }
         }
 
-        if (arguments.length === 2) {
+        if (arglen === 2) {
             // No super-class (second argument is proto-object)
             protoObject = superPathOrClass;
 
@@ -66,17 +66,17 @@
         }
 
         // Create the constructor function dynamically so it has the appropriate name.
-        func = map[classPath] = (new Function("constructor", "return function " + classPath.replace(/[^\w$]/g, '_') + "(){ constructor.apply(this, arguments); };")) (
+        func = map[classPath] = (new Function("c", "return function " + classPath.replace(/[^\w$]/g, '_') + "(){ c.apply(this, arguments); };")) (
             function () {
                 // Instatiate any properties that need it
-                for (var prop in this) {
-                    if (this[prop] && this[prop].__knob_instantiate) {
-                        this[prop] = this[prop].__knob_instantiate(this);
+                for (var prop in prototype) {
+                    if (prototype[prop] && prototype[prop].instantiate) {
+                        this[prop] = prototype[prop].instantiate(this);
                     }
                 }
-                if (func.prototype.initialize) {
+                if (prototype.initialize) {
                     // Call the initialize method from the prototype
-                    func.prototype.initialize.apply(this, arguments);
+                    prototype.initialize.apply(this, arguments);
                 }
             }
         );
@@ -103,15 +103,15 @@
     }
 
     function knobExtend(extenders) {
-        var origInstantiate = this.__knob_instantiate;
-        this.__knob_instantiate = function(binding) {
+        var origInstantiate = this.instantiate;
+        this.instantiate = function(binding) {
             return origInstantiate.call(this, binding).extend(extenders);
         }
         return this;
     };
 
     knob.computed = function(readFunction, writeFunction) {
-        readFunction.__knob_instantiate = function(binding) {
+        readFunction.instantiate = function(binding) {
             return ko.computed(readFunction, binding, {deferEvaluation:true, write:writeFunction});
         };
         readFunction.extend = knobExtend;
@@ -120,7 +120,7 @@
 
     knob.observable = function(initialValue) {
         return {
-            __knob_instantiate: function() {
+            instantiate: function() {
                 return ko.observable(initialValue);
             },
             extend: knobExtend,
@@ -130,7 +130,7 @@
 
     knob.observableArray = function() {
         return {
-            __knob_instantiate: function() {
+            instantiate: function() {
                 return ko.observableArray();
             },
             extend: knobExtend
@@ -138,7 +138,7 @@
     };
 
     knob.bound = function(func) {
-        func.__knob_instantiate = function(binding) {
+        func.instantiate = function(binding) {
             return func.bind(binding);
         };
         return func;

@@ -1,13 +1,13 @@
 describe("Knob", function() {
-    var $InvalidClasspath/*String*/ = "invalid class-path: ";
-    var $NonExistentClass/*String*/ = "non-existent class: ";
-    var $NonExistentSuperClass/*String*/ = "invalid super-class: ";
-    var $InvalidProtobject/*String*/ = "invalid proto-object given for: ";
+    var $InvalidClasspath = "invalid class-path: ";
+    var $NonExistentClass = "non-existent class: ";
+    var $NonExistentSuperClass = "invalid super-class: ";
+    var $InvalidProtobject = "invalid proto-object given for: ";
 
-    var classpath/*String*/ = "MyClass";
-    var superclasspath/*String*/ = "MySuperClass";
-    var subclasspath/*String*/ = "MySubClass";
-    var sub2classpath/*String*/ = "MySub2Class";
+    var classpath = "MyClass";
+    var superclasspath = "MySuperClass";
+    var subclasspath = "MySubClass";
+    var sub2classpath = "MySub2Class";
 
     beforeEach(function() {
     });
