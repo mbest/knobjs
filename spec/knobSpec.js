@@ -203,5 +203,61 @@ describe("Knob", function() {
         expect(proof).toEqual("12");
     });
 
+    it('should create distinct observable instances for each created object', function() {
+        var constructor = knob(classpath, {
+            item: knob.observable(1)
+        });
+        var obj1 = new constructor();
+        expect(obj1.item()).toEqual(1);
 
+        var obj2 = new constructor();
+        obj2.item(2);
+        expect(obj2.item()).toEqual(2);
+        expect(obj1.item()).toEqual(1);
+    });
+
+    it('should create distinct observable array instances for each created object', function() {
+        var constructor = knob(classpath, {
+            item: knob.observableArray()
+        });
+        var obj1 = new constructor();
+        obj1.item([1,2,3]);
+        expect(obj1.item()).toEqual([1,2,3]);
+
+        var obj2 = new constructor();
+        obj2.item([7,8,9]);
+        expect(obj2.item()).toEqual([7,8,9]);
+        expect(obj1.item()).toEqual([1,2,3]);
+    });
+
+    it('should create distinct computed instances for each created object', function() {
+        var constructor = knob(classpath, {
+            item: knob.observable(1),
+            comp: knob.computed(function() {
+                return this.item() * 2;
+            })
+        });
+        var obj1 = new constructor();
+        expect(obj1.comp()).toEqual(2);
+
+        var obj2 = new constructor();
+        obj2.item(2);
+        expect(obj2.comp()).toEqual(4);
+        expect(obj1.comp()).toEqual(2);
+    });
+
+    it('should reference correct "this" value in bound functions', function() {
+        var constructor = knob(classpath, {
+            unboundMethod: function(toTest) {
+                expect(this).toEqual(toTest);
+            },
+            boundMethod: knob.bound(function(toTest) {
+                expect(this).toEqual(toTest);
+            })
+        });
+        var obj = new constructor();
+        var unboundRef = obj.unboundMethod, boundRef = obj.boundMethod;
+        unboundRef(window);
+        boundRef(obj);
+    });
 });

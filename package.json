@@ -1,0 +1,17 @@
+{
+  "name": "knob.js",
+  "description": "Class inheritance library for Knockout based on Objs",
+  "url": "https://github.com/mbest/knobjs",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Michael Best",
+  "main": "knob.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mbest/knobjs.git"
+  },
+  "bugs": "https://github.com/mbest/knobjs/issues",
+  "dependencies": {
+    "knockout": ">=2.2.0"
+  }
+}

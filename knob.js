@@ -1,3 +1,10 @@
+/**
+ * @license Knob.js
+ * Class inheritance library for Knockout based on Objs
+ * (c) Michael Best
+ * License: MIT (http://www.opensource.org/licenses/mit-license.php)
+ * Version 0.1.0
+ */
 (function (factory) {
     if (typeof exports === 'object') {
         // Node. Does not work with strict CommonJS, but
@@ -26,6 +33,11 @@
         map[prop] = undefined;
     }
 
+    // There are four ways to call knob:
+    // 1: knob(classPath) returns the constructor with the given path (or throws error if none exists)
+    // 2. knob(classPath, null) clears the constructor with the given path
+    // 3. knob(classPath, protoObject) creates a class with the given path and protoObject (properties copied to actual prototype)
+    // 4. knob(classPath, superPathOrClass, protoObject) creates a class with the given path and protoObject, derived from the given superClass
     var knob = function(classPath, superPathOrClass, protoObject) {
         if (typeof classPath !== 'string') {
             throw Error('invalid class-path: ' + classPath);
