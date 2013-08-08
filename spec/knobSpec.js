@@ -38,6 +38,8 @@ describe("Knob", function() {
 
     it('should return a constructor function', function() {
         expect(typeof knob(classpath, {})).toEqual("function");
+        // Should also make the constructor available at the specified path
+        expect(typeof window[classpath]).toEqual("function");
     });
 
     it('should remove class if second parameter is null', function() {
@@ -48,6 +50,16 @@ describe("Knob", function() {
         expect(removedConstructor).toEqual(constructor);
 
         expect(function(){knob(classpath)}).toThrow($NonExistentClass + classpath);
+        // Should also remove the constructor from the specified path
+        expect(window[classpath]).toBeUndefined();
+    });
+
+    it('should parse class namespace appropriately when setting up path', function () {
+        var constructor = knob('x.y.z', {});
+        expect(window.x.y.z).toEqual(constructor);
+
+        knob('x.y.z', null);
+        expect(window.x.y.z).toBeUndefined();
     });
 
     it('should throw an error when inheriting with invalid parameters', function() {

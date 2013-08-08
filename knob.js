@@ -25,6 +25,19 @@
         return new F();
     };
 
+    var root = (0, eval)('this');
+
+    // Set up the class at the specified name relative to 'this'
+    function setUpClassName(classPath, func) {
+        if (root) {
+            var hook = root, parts = classPath.split('.'), part;
+            for (var i = 0, n = parts.length - 1; part = parts[i], i < n; i++) {
+                hook = hook[part] || (hook[part] = {});
+            }
+            hook[part] = func;
+        }
+    }
+
     // Map of all defined classes
     var map = {};
 
@@ -60,7 +73,10 @@
 
             // Null proto given: delete class from map and return
             if (protoObject === null) {
-                map[classPath] = undefined;
+                if (func) {
+                    map[classPath] = undefined;
+                    setUpClassName(classPath, undefined);
+                }
                 return func;
             }
         } else {
@@ -92,6 +108,7 @@
                 }
             }
         );
+        setUpClassName(classPath, func);
 
         // Save the class-path for reference
         func.$classpath = classPath;
