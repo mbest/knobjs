@@ -25,19 +25,6 @@
         return new F();
     };
 
-    var root = (0, eval)('this');
-
-    // Set up the class at the specified name relative to 'this'
-    function setUpClassName(classPath, func) {
-        if (root) {
-            var hook = root, parts = classPath.split('.'), part;
-            for (var i = 0, n = parts.length - 1; part = parts[i], i < n; i++) {
-                hook = hook[part] || (hook[part] = {});
-            }
-            hook[part] = func;
-        }
-    }
-
     // Map of all defined classes
     var map = {};
 
@@ -51,7 +38,7 @@
     // 2. knob(classPath, null) clears the constructor with the given path
     // 3. knob(classPath, protoObject) creates a class with the given path and protoObject (properties copied to actual prototype)
     // 4. knob(classPath, superPathOrClass, protoObject) creates a class with the given path and protoObject, derived from the given superClass
-    var knob = function(classPath, superPathOrClass, protoObject) {
+    function knob(classPath, superPathOrClass, protoObject) {
         if (typeof classPath !== 'string') {
             throw Error('invalid class-path: ' + classPath);
         }
@@ -131,13 +118,27 @@
         return func;
     }
 
+    // Default root is the global object
+    knob.root = (0, eval)('this');
+
+    // Sets up the class at the specified name relative to root
+    function setUpClassName(classPath, func) {
+        if (knob.root) {
+            var hook = knob.root, parts = classPath.split('.'), part;
+            for (var i = 0, n = parts.length - 1; part = parts[i], i < n; i++) {
+                hook = hook[part] || (hook[part] = {});
+            }
+            hook[part] = func;
+        }
+    }
+
     function knobExtend(extenders) {
         var origInstantiate = this.instantiate;
         this.instantiate = function(binding) {
             return origInstantiate.call(this, binding).extend(extenders);
         }
         return this;
-    };
+    }
 
     knob.computed = function(readFunction, writeFunction) {
         readFunction.instantiate = function(binding) {

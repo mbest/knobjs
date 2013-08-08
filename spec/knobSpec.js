@@ -62,6 +62,18 @@ describe("Knob", function() {
         expect(window.x.y.z).toBeUndefined();
     });
 
+    it('should use specified root instead of window', function() {
+        var saveRoot = knob.root;
+        try {
+            var root = knob.root = {};
+            var constructor = knob(classpath, {});
+            expect(root[classpath]).toEqual(constructor);
+            expect(window[classpath]).toBeUndefined();
+        } finally {
+            knob.root = saveRoot;
+        }
+    });
+
     it('should throw an error when inheriting with invalid parameters', function() {
         expect(function(){knob(classpath, "", {})}).toThrow($NonExistentSuperClass);
         expect(function(){knob(classpath, superclasspath, {})}).toThrow($NonExistentSuperClass + superclasspath);
